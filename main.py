@@ -1,38 +1,73 @@
-import shutil
+import logging
 import uuid
 from pathlib import Path
 
 from fastapi import (
-    Depends, FastAPI, File, Form, HTTPException, Response, UploadFile
+    Depends, FastAPI, File, Form, HTTPException, Query, Request, Response, UploadFile
 )
-from sqlalchemy.orm import Session
-from services import (
-    AnalysisUnavailableError,
-    MissingInputError,
-    process_submission,
-)
-
 from fastapi.openapi.docs import get_swagger_ui_html
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
+from sqlalchemy.orm import Session
+
 from auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     COOKIE_NAME,
     create_access_token,
     get_current_user,
+    revoke_token,
 )
 from database import Base, engine, get_db
 from models import User
-from schemas import LoginRequest, RegisterRequest, RegisterResponse
-from services import process_submission
+from schemas import (
+    DEFAULT_QUESTION_COUNT,
+    AnalysisResponse,
+    CategoryInfo,
+    DifficultyInfo,
+    GenerateQuestionsRequest,
+    GenerateQuestionsResponse,
+    LoginRequest,
+    QuestionCategory,
+    QuestionListResponse,
+    QuestionOptionsResponse,
+    QuestionOut,
+    RegisterRequest,
+    RegisterResponse,
+)
+import question_service
+from services import (
+    AnalysisUnavailableError,
+    InvalidInputError,
+    MissingInputError,
+    process_submission,
+)
 from services_auth import (
     EmailAlreadyRegisteredError,
     authenticate_user,
     register_user,
 )
 
+logging.basicConfig(level=logging.INFO)
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+MAX_UPLOAD_BYTES = 5 * 1024 * 1024                 # 5 MB resume
+MAX_REQUEST_BYTES = MAX_UPLOAD_BYTES + 256 * 1024  # + job description and form overhead
+
+
+@app.middleware("http")
+async def reject_oversized_requests(request: Request, call_next):
+    """Turn away obviously huge uploads before the server reads them.
+    (Requests without a Content-Length are still limited inside /analyze.)"""
+    if request.method == "POST" and request.url.path == "/analyze":
+        length = request.headers.get("content-length")
+        if length and length.isdigit() and int(length) > MAX_REQUEST_BYTES:
+            return JSONResponse(
+                status_code=413,
+                content={"detail": "Upload too large (the resume can be at most 5 MB)."},
+            )
+    return await call_next(request)
 
 
 RESET_FIX_JS = """
@@ -152,7 +187,13 @@ def login(
 
 
 @app.post("/logout")
-def logout(response: Response):
+def logout(request: Request, response: Response):
+    # Deleting the cookie only logs this browser out. Also cancel the token itself,
+    # so a copy of it stops working immediately.
+    token = request.cookies.get(COOKIE_NAME)
+    if token:
+        revoke_token(token)
+
     response.delete_cookie(
         key=COOKIE_NAME,
         httponly=True,
@@ -162,13 +203,31 @@ def logout(response: Response):
     return {"message": "Logged out"}
 
 
-@app.post("/analyze")
+def save_upload_limited(upload: UploadFile, destination: Path, limit: int) -> None:
+    """Copy an upload to disk; stop and clean up if it is bigger than `limit` bytes."""
+    written = 0
+    try:
+        with open(destination, "wb") as out:
+            while chunk := upload.file.read(1024 * 1024):
+                written += len(chunk)
+                if written > limit:
+                    raise HTTPException(
+                        status_code=413,
+                        detail=f"Resume is too large (max {limit // (1024 * 1024)} MB).",
+                    )
+                out.write(chunk)
+    except BaseException:
+        destination.unlink(missing_ok=True)
+        raise
+
+
+@app.post("/analyze", response_model=AnalysisResponse)
 def analyze(
     job_description: str | None = Form(
         None, description="Optional. Leave empty to use your latest saved one"
     ),
     resume: UploadFile | None = File(
-        None, description="Optional, PDF only. Leave empty to use your latest saved one"
+        None, description="Optional, PDF only (max 5 MB). Leave empty to use your latest saved one"
     ),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -192,8 +251,7 @@ def analyze(
             raise HTTPException(status_code=400, detail="File is not a valid PDF")
 
         file_path = UPLOAD_DIR / f"{uuid.uuid4()}{suffix}"
-        with open(file_path, "wb") as f:
-            shutil.copyfileobj(resume.file, f)
+        save_upload_limited(resume, file_path, MAX_UPLOAD_BYTES)
 
         original_filename = resume.filename
 
@@ -207,6 +265,8 @@ def analyze(
         )
     except MissingInputError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except InvalidInputError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except AnalysisUnavailableError:
         raise HTTPException(
             status_code=503,
@@ -216,14 +276,85 @@ def analyze(
         if file_path:
             file_path.unlink(missing_ok=True)
 
-    analysis = result["analysis"]
+    return AnalysisResponse.model_validate(result["analysis"])
 
-    return {
-        "analysis_version": analysis.analysis_version,
-        "resume_version": analysis.resume_version,
-        "jd_version": analysis.jd_version,
-        "overview": analysis.overview,
-        "match_analysis": analysis.match_analysis,
-        "missing_requirements": analysis.missing_requirements,
-        "suggestions": analysis.suggestions,
-    }
+
+@app.get("/questions/options", response_model=QuestionOptionsResponse)
+def question_options():
+    """What you can ask for when generating questions: every category (with a description and
+    an example), the difficulty levels, and the allowed number of questions. No login needed."""
+    return QuestionOptionsResponse(
+        categories=[
+            CategoryInfo(name=name, **info)
+            for name, info in question_service.CATEGORY_INFO.items()
+        ],
+        difficulties=[
+            DifficultyInfo(name=name, description=description)
+            for name, description in question_service.DIFFICULTY_INFO.items()
+        ],
+        count_min=1,
+        count_max=question_service.MAX_QUESTIONS,
+        count_default=DEFAULT_QUESTION_COUNT,
+    )
+
+
+@app.post("/questions/generate", response_model=GenerateQuestionsResponse)
+def generate_questions(
+    payload: GenerateQuestionsRequest | None = None,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Create new interview questions from your saved resume and job description.
+
+    Every question ever generated is remembered, so each call gives you NEW ones.
+    You need to have used /analyze at least once, so a resume and a job description are saved.
+    """
+    payload = payload or GenerateQuestionsRequest()
+
+    try:
+        result = question_service.generate_questions(
+            db,
+            current_user,
+            count=payload.count,
+            categories=payload.categories,
+            difficulty=payload.difficulty,
+        )
+    except MissingInputError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except AnalysisUnavailableError:
+        raise HTTPException(
+            status_code=503,
+            detail="Question service is busy. Please try again in a minute.",
+        )
+
+    return GenerateQuestionsResponse(
+        batch_no=result["batch_no"],
+        requested=result["requested"],
+        saved=result["saved"],
+        duplicates_skipped=result["duplicates_skipped"],
+        total_questions=result["total_questions"],
+        note=result["note"],
+        questions=[QuestionOut.model_validate(q) for q in result["questions"]],
+    )
+
+
+@app.get("/questions", response_model=QuestionListResponse)
+def list_questions(
+    category: QuestionCategory | None = None,
+    batch_no: int | None = Query(None, ge=1, description="Only this generation round"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Every question generated for you so far, newest round first."""
+    total, items = question_service.list_questions(
+        db, current_user, category=category, batch_no=batch_no, limit=limit, offset=offset
+    )
+
+    return QuestionListResponse(
+        total=total,
+        limit=limit,
+        offset=offset,
+        items=[QuestionOut.model_validate(q) for q in items],
+    )

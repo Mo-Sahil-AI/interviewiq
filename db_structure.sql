@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict ni1lXqx37bkMdd9VuzC1L7pDpEMnQFzEVEJKg75CEXN4vJZrFh6pN0BZX7EhYRt
+\restrict lOQcpTCb7qOsmu0F2fFqsn0D2NIC0AA9bgDQQ3yb2otFog0i6Sp0wiZ6vNevlek
 
 -- Dumped from database version 18.6 (Ubuntu 18.6-0ubuntu0.26.04.1)
 -- Dumped by pg_dump version 18.6 (Ubuntu 18.6-0ubuntu0.26.04.1)
@@ -40,6 +40,34 @@ CREATE TABLE public.job_descriptions (
 ALTER TABLE public.job_descriptions OWNER TO postgres;
 
 --
+-- Name: questions; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.questions (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid NOT NULL,
+    batch_no integer NOT NULL,
+    item_no integer NOT NULL,
+    resume_id uuid NOT NULL,
+    jd_id uuid NOT NULL,
+    resume_version integer NOT NULL,
+    jd_version integer NOT NULL,
+    analysis_id uuid,
+    category character varying(20) NOT NULL,
+    difficulty character varying(10) NOT NULL,
+    target_skill character varying(100),
+    question_text text NOT NULL,
+    question_hash character varying(64) NOT NULL,
+    ideal_answer_points jsonb,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT questions_category_check CHECK (((category)::text = ANY ((ARRAY['technical'::character varying, 'behavioral'::character varying, 'situational'::character varying, 'resume_based'::character varying, 'hr'::character varying])::text[]))),
+    CONSTRAINT questions_difficulty_check CHECK (((difficulty)::text = ANY ((ARRAY['easy'::character varying, 'medium'::character varying, 'hard'::character varying])::text[])))
+);
+
+
+ALTER TABLE public.questions OWNER TO postgres;
+
+--
 -- Name: resume_analysis; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -58,7 +86,7 @@ CREATE TABLE public.resume_analysis (
     suggestions text,
     others jsonb,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    analysis_hash character varying(64)
+    analysis_hash character varying(64) NOT NULL
 );
 
 
@@ -106,8 +134,8 @@ ALTER TABLE public.user_profile OWNER TO postgres;
 CREATE TABLE public.users (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     email character varying(255) NOT NULL,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    password_hash character varying(255)
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    password_hash character varying(255) NOT NULL
 );
 
 
@@ -119,6 +147,14 @@ ALTER TABLE public.users OWNER TO postgres;
 
 ALTER TABLE ONLY public.job_descriptions
     ADD CONSTRAINT job_descriptions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: questions questions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.questions
+    ADD CONSTRAINT questions_pkey PRIMARY KEY (id);
 
 
 --
@@ -167,6 +203,14 @@ ALTER TABLE ONLY public.resumes
 
 ALTER TABLE ONLY public.resume_analysis
     ADD CONSTRAINT unique_user_analysis_hash UNIQUE (user_id, analysis_hash);
+
+
+--
+-- Name: questions unique_user_question_hash; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.questions
+    ADD CONSTRAINT unique_user_question_hash UNIQUE (user_id, question_hash);
 
 
 --
@@ -222,6 +266,13 @@ CREATE INDEX idx_jd_user_version ON public.job_descriptions USING btree (user_id
 
 
 --
+-- Name: idx_questions_user_batch; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_questions_user_batch ON public.questions USING btree (user_id, batch_no, item_no);
+
+
+--
 -- Name: idx_resume_user_version; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -268,6 +319,38 @@ ALTER TABLE ONLY public.job_descriptions
 
 
 --
+-- Name: questions questions_analysis_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.questions
+    ADD CONSTRAINT questions_analysis_id_fkey FOREIGN KEY (analysis_id) REFERENCES public.resume_analysis(id);
+
+
+--
+-- Name: questions questions_jd_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.questions
+    ADD CONSTRAINT questions_jd_id_fkey FOREIGN KEY (jd_id) REFERENCES public.job_descriptions(id);
+
+
+--
+-- Name: questions questions_resume_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.questions
+    ADD CONSTRAINT questions_resume_id_fkey FOREIGN KEY (resume_id) REFERENCES public.resumes(id);
+
+
+--
+-- Name: questions questions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.questions
+    ADD CONSTRAINT questions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
 -- Name: resume_analysis resume_analysis_jd_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -311,5 +394,5 @@ ALTER TABLE ONLY public.user_profile
 -- PostgreSQL database dump complete
 --
 
-\unrestrict ni1lXqx37bkMdd9VuzC1L7pDpEMnQFzEVEJKg75CEXN4vJZrFh6pN0BZX7EhYRt
+\unrestrict lOQcpTCb7qOsmu0F2fFqsn0D2NIC0AA9bgDQQ3yb2otFog0i6Sp0wiZ6vNevlek
 
