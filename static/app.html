@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07151a">
+  <title>InterviewIQ</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <a class="skip-link" href="#workspace-content">Skip to workspace</a>
+  <div id="auth-view" class="auth-layout">
+    <section class="auth-intro">
+      <p class="brand-mark">Interview<span>IQ</span></p>
+      <p class="eyebrow">Your interview command center</p>
+      <h1>Turn your experience into interview confidence.</h1>
+      <p class="intro-copy">Analyze your resume against a role, practice with focused questions, and complete a voice mock interview from one calm workspace.</p>
+      <div class="intro-points">
+        <span>Resume intelligence</span>
+        <span>Role-specific questions</span>
+        <span>Adaptive voice interviews</span>
+      </div>
+    </section>
+    <section class="auth-card">
+      <div class="auth-heading">
+        <p class="eyebrow" id="auth-eyebrow">Welcome back</p>
+        <h2 id="auth-title">Sign in to InterviewIQ</h2>
+        <p id="auth-subtitle">Your workspace is waiting for you.</p>
+      </div>
+      <form id="auth-form">
+        <label for="auth-email">Email<input id="auth-email" name="email" type="email" autocomplete="email" spellcheck="false" required></label>
+        <label for="auth-password">Password<input id="auth-password" name="password" type="password" minlength="8" autocomplete="current-password" required></label>
+        <button id="auth-submit" type="submit">Sign in</button>
+      </form>
+      <form id="verification-form" class="verification-panel" hidden>
+        <div class="verification-note">
+          <span class="verification-icon" aria-hidden="true">✓</span>
+          <div>
+            <strong>Check your inbox</strong>
+            <p id="verification-copy">We sent a verification token to your email address.</p>
+          </div>
+        </div>
+        <label for="verification-token">Verification token
+          <input id="verification-token" name="token" type="text" autocomplete="one-time-code" spellcheck="false" placeholder="Paste your token…" minlength="32" required>
+        </label>
+        <button id="verification-submit" type="submit">Verify email</button>
+        <p class="verification-help">Verification completes your account setup. You can still sign in with valid credentials.</p>
+      </form>
+      <p id="auth-message" class="form-message" role="status"></p>
+      <button id="auth-toggle" class="text-button" type="button">Need an account? Register</button>
+      <button id="verification-back" class="text-button" type="button" hidden>Back to sign in</button>
+    </section>
+  </div>
+
+  <div id="app-view" class="app-layout" hidden>
+    <aside class="sidebar">
+      <div>
+        <p class="brand-mark">Interview<span>IQ</span></p>
+        <p class="sidebar-label">Workspace</p>
+        <nav class="nav-list" aria-label="Workspace sections">
+          <button class="nav-item active" type="button" data-section="overview" aria-current="page">Overview</button>
+          <button class="nav-item" type="button" data-section="documents">Resume &amp; JD</button>
+          <button class="nav-item" type="button" data-section="analysis">Analysis</button>
+          <button class="nav-item" type="button" data-section="questions">Questions</button>
+          <button class="nav-item" type="button" data-section="interview">Mock interview</button>
+          <button class="nav-item" type="button" data-section="assistant">Coach assistant</button>
+        </nav>
+      </div>
+      <div class="sidebar-bottom">
+        <p id="user-email" class="user-email"></p>
+        <button id="logout" class="logout-button" type="button">Log out</button>
+      </div>
+    </aside>
+
+    <main id="workspace-content" class="content">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Interview preparation workspace</p>
+          <h1 id="page-title">Good to see you.</h1>
+        </div>
+        <a class="topbar-action" href="/interview">Open live interview <span aria-hidden="true">↗</span></a>
+      </header>
+
+      <p id="global-message" class="global-message" role="status" aria-live="polite"></p>
+
+      <section id="section-overview" class="page-section">
+        <div class="hero-card">
+          <div>
+            <p class="eyebrow">Your next best step</p>
+            <h2 id="next-step-title">Upload your resume and target job description.</h2>
+            <p id="next-step-copy">Start with your documents and InterviewIQ will build the rest of your preparation workspace.</p>
+          </div>
+          <button id="next-step-action" class="light-button" data-go="documents" type="button">Set up documents</button>
+        </div>
+        <div class="stat-grid">
+          <article class="stat-card"><span>Resume</span><strong id="resume-stat">Not uploaded</strong><small id="resume-stat-detail">Add your latest version</small></article>
+          <article class="stat-card"><span>Latest analysis</span><strong id="analysis-stat">Not run</strong><small id="analysis-stat-detail">Compare your fit to a role</small></article>
+          <article class="stat-card"><span>Question bank</span><strong id="question-stat">0 questions</strong><small>Practice with role-specific prompts</small></article>
+          <article class="stat-card"><span>Mock interviews</span><strong id="interview-stat">0 completed</strong><small>Build confidence by speaking aloud</small></article>
+        </div>
+        <div class="two-column">
+          <article class="panel">
+            <div class="panel-heading"><div><p class="eyebrow">Recommended flow</p><h3>Prepare in three focused steps</h3></div></div>
+            <div class="flow-list">
+              <button class="flow-step" type="button" data-go="documents"><b>01</b><span><strong>Bring your context</strong><small>Upload a resume and paste the target job description.</small></span><i aria-hidden="true">→</i></button>
+              <button class="flow-step" type="button" data-go="analysis"><b>02</b><span><strong>Understand your fit</strong><small>See strengths, gaps, and practical improvements.</small></span><i aria-hidden="true">→</i></button>
+              <button class="flow-step" type="button" data-go="questions"><b>03</b><span><strong>Practice deliberately</strong><small>Generate fresh questions or start a voice interview.</small></span><i aria-hidden="true">→</i></button>
+            </div>
+          </article>
+          <article class="panel accent-panel">
+            <p class="eyebrow">InterviewIQ principle</p>
+            <h3>Specific preparation beats generic confidence.</h3>
+            <p>Your questions and interview are grounded in the resume and role you are actually targeting.</p>
+            <button class="dark-button" data-go="interview" type="button">Start practicing</button>
+          </article>
+        </div>
+      </section>
+
+      <section id="section-documents" class="page-section" hidden>
+        <div class="section-heading"><div><p class="eyebrow">Foundation</p><h2>Resume &amp; job description</h2><p>Keep the context for every analysis, question, and interview in one place.</p></div></div>
+        <form id="analyze-form" class="panel upload-panel">
+          <div class="upload-grid">
+            <label class="file-drop" for="resume-file"><span class="drop-icon" aria-hidden="true">↑</span><strong>Upload resume PDF</strong><small id="file-name">PDF up to 5&nbsp;MB</small><input id="resume-file" name="resume" type="file" accept=".pdf,application/pdf" required></label>
+            <label class="textarea-field" for="job-description"><span>Target job description</span><textarea id="job-description" name="job_description" rows="10" placeholder="Paste the role description here…" autocomplete="off" required></textarea></label>
+          </div>
+          <div class="form-footer"><p id="upload-status" class="form-message"></p><button class="dark-button" type="submit">Upload &amp; analyze</button></div>
+        </form>
+        <div class="saved-context">
+          <article class="panel"><p class="eyebrow">Saved resume</p><h3 id="saved-resume">None yet</h3><p id="saved-resume-detail">Upload a PDF to create your first resume version.</p></article>
+          <article class="panel"><p class="eyebrow">Saved role</p><h3 id="saved-jd">None yet</h3><p id="saved-jd-detail">Your latest job description will be used for analysis and generation.</p></article>
+        </div>
+      </section>
+
+      <section id="section-analysis" class="page-section" hidden>
+        <div class="section-heading"><div><p class="eyebrow">Clarity before practice</p><h2>Resume analysis</h2><p>Understand what matches the role and what deserves attention.</p></div><button class="light-button" data-go="documents" type="button">Update documents</button></div>
+        <div id="analysis-empty" class="empty-state panel"><h3>No analysis yet</h3><p>Upload a resume and job description first. Your analysis will appear here.</p><button class="dark-button" data-go="documents" type="button">Upload documents</button></div>
+        <div id="analysis-content" hidden>
+          <article class="panel analysis-lead"><p class="eyebrow">Overview</p><h3 id="analysis-overview"></h3></article>
+          <div class="analysis-grid">
+            <article class="panel"><p class="eyebrow">Match analysis</p><p id="analysis-match"></p></article>
+            <article class="panel"><p class="eyebrow">Missing requirements</p><p id="analysis-missing"></p></article>
+            <article class="panel"><p class="eyebrow">Suggestions</p><p id="analysis-suggestions"></p></article>
+          </div>
+        </div>
+      </section>
+
+      <section id="section-questions" class="page-section" hidden>
+        <div class="section-heading"><div><p class="eyebrow">Deliberate practice</p><h2>Question studio</h2><p>Generate new questions from your saved resume and target role.</p></div></div>
+        <div class="two-column">
+          <form id="questions-form" class="panel">
+            <p class="eyebrow">Build a practice set</p><h3>What do you want to rehearse?</h3>
+            <label for="question-count">Number of questions<input id="question-count" name="count" type="number" min="1" max="20" value="10"></label>
+            <label for="question-difficulty">Difficulty<select id="question-difficulty" name="difficulty"><option value="">Balanced mix</option><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select></label>
+            <div><span class="field-label">Categories</span><div id="category-options" class="check-grid"></div></div>
+            <p id="questions-status" class="form-message"></p><button class="dark-button" type="submit">Generate questions</button>
+          </form>
+          <article class="panel question-bank-panel">
+            <div class="panel-heading">
+              <div><p class="eyebrow">Saved bank</p><h3 id="question-bank-title">0 questions ready</h3></div>
+              <button id="refresh-questions" class="icon-button" type="button" aria-label="Refresh questions">↻</button>
+            </div>
+            <div class="question-tools" aria-label="Question history filters">
+              <label for="question-view">Show
+                <select id="question-view">
+                  <option value="latest">Latest generated</option>
+                  <option value="all">All saved questions</option>
+                </select>
+              </label>
+              <label for="question-category-filter">Category
+                <select id="question-category-filter">
+                  <option value="">All categories</option>
+                </select>
+              </label>
+              <label for="question-batch-filter">Generation round
+                <select id="question-batch-filter">
+                  <option value="">All rounds</option>
+                </select>
+              </label>
+            </div>
+            <div id="question-list" class="question-list"><p class="muted">Generate your first practice set.</p></div>
+            <div class="question-pagination">
+              <button id="question-prev" class="light-button" type="button">Previous</button>
+              <span id="question-page-status" aria-live="polite">Showing 0 questions</span>
+              <button id="question-next" class="light-button" type="button">Next</button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="section-interview" class="page-section" hidden>
+        <div class="section-heading"><div><p class="eyebrow">Speak, adapt, improve</p><h2>Voice mock interview</h2><p>The interviewer adapts to your answers and saves feedback for review.</p></div></div>
+        <div class="interview-launch panel">
+          <div class="interview-orb"><span aria-hidden="true">IQ</span></div>
+          <div><p class="eyebrow">Browser voice mode</p><h3>Practice in a realistic conversation.</h3><p>Choose your duration and interview type, then answer aloud. Your transcript, scores, and summary are saved to your account.</p><a class="dark-button button-link" href="/interview">Open interview room <span aria-hidden="true">↗</span></a></div>
+        </div>
+        <div class="panel"><div class="panel-heading"><div><p class="eyebrow">History</p><h3>Recent interviews</h3><p class="panel-hint">Select an interview to open its full analysis and voice review.</p></div><button id="refresh-interviews" class="icon-button" type="button" aria-label="Refresh interviews">↻</button></div><div id="interview-list" class="history-list"><p class="muted">No interviews yet.</p></div></div>
+        <article id="interview-review" class="panel interview-review" hidden>
+          <div class="panel-heading"><div><p class="eyebrow">Interview review</p><h3 id="review-title">Interview analysis</h3></div><button id="close-interview-review" class="light-button" type="button">Close</button></div>
+          <p id="review-summary" class="review-summary"></p>
+          <div id="review-score-grid" class="review-score-grid"></div>
+          <div class="review-columns">
+            <section><p class="eyebrow">Strengths</p><ul id="review-strengths" class="review-list"></ul></section>
+            <section><p class="eyebrow">Areas to improve</p><ul id="review-weaknesses" class="review-list"></ul></section>
+            <section><p class="eyebrow">Recommendations</p><ul id="review-recommendations" class="review-list"></ul></section>
+          </div>
+          <div><p class="eyebrow">Question-by-question review</p><div id="review-turns" class="review-turns"></div></div>
+        </article>
+      </section>
+
+      <section id="section-assistant" class="page-section" hidden>
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Your preparation companion</p>
+            <h2>Coach assistant</h2>
+            <p>Ask about your resume, target role, generated questions, or interview performance.</p>
+          </div>
+          <button id="clear-assistant" class="light-button" type="button">Clear chat</button>
+        </div>
+        <article class="panel assistant-panel">
+          <div id="assistant-messages" class="assistant-messages" role="log" aria-live="polite" aria-label="Assistant conversation">
+            <p class="muted">Ask me anything about your interview preparation.</p>
+          </div>
+          <form id="assistant-form" class="assistant-form">
+            <label for="assistant-input">Message
+              <textarea id="assistant-input" name="message" rows="3" maxlength="4000" placeholder="How can I improve my answer about…" autocomplete="off" required></textarea>
+            </label>
+            <div class="assistant-form-footer">
+              <p id="assistant-status" class="form-message"></p>
+              <button class="dark-button" type="submit">Ask coach</button>
+            </div>
+          </form>
+        </article>
+      </section>
+    </main>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

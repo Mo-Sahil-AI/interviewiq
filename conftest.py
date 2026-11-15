@@ -15,6 +15,8 @@ import os
 
 import pytest
 
+import email_service
+
 _URL = os.getenv("TEST_DATABASE_URL", "")
 _DBNAME = _URL.rsplit("/", 1)[-1].split("?")[0]
 if not _URL or not _DBNAME.endswith("_test"):
@@ -49,8 +51,16 @@ def gemini(monkeypatch):
 def clean_db():
     with database.engine.begin() as conn:
         conn.exec_driver_sql(
-            "TRUNCATE users, resumes, job_descriptions, resume_analysis, user_profile, questions CASCADE")
+            "TRUNCATE users, resumes, job_descriptions, resume_analysis, "
+            "user_profile, questions, interview_sessions, interview_turns, "
+            "interview_summaries, voice_analyses, assistant_messages CASCADE")
     yield
+
+
+@pytest.fixture(autouse=True)
+def prevent_real_email_delivery(monkeypatch):
+    """Keep test registrations from sending messages to real mailboxes."""
+    monkeypatch.setattr(email_service, "send_email", lambda *args, **kwargs: None)
 
 
 @pytest.fixture

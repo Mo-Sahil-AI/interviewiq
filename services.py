@@ -1,18 +1,17 @@
 import hashlib
 import json
 import logging
-import os
 import uuid
 
 import pymupdf
-from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field, field_validator, model_validator
-from sqlalchemy import desc
+from sqlalchemy import desc, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from config import GOOGLE_API_KEY
 from models import JobDescription, Resume, ResumeAnalysis, UserProfile
 
 logger = logging.getLogger(__name__)
@@ -514,6 +513,22 @@ def get_analysis_by_hash(
     )
 
 
+def _analysis_lock_key(user_id, analysis_hash) -> int:
+    """Return a stable signed bigint for a PostgreSQL transaction advisory lock."""
+    digest = hashlib.sha256(
+        f"{user_id}:{analysis_hash}".encode("utf-8")
+    ).digest()
+    return int.from_bytes(digest[:8], byteorder="big", signed=True)
+
+
+def lock_analysis_creation(db, user_id, analysis_hash) -> None:
+    """Serialize creation of one user's analysis for one resume/JD pair."""
+    db.execute(
+        text("SELECT pg_advisory_xact_lock(CAST(:lock_key AS bigint))"),
+        {"lock_key": _analysis_lock_key(user_id, analysis_hash)},
+    )
+
+
 def create_analysis(
         db,
         user_id,
@@ -525,6 +540,26 @@ def create_analysis(
         resume.resume_hash,
         jd.jd_hash
     )
+
+    existing = get_analysis_by_hash(
+        db,
+        user_id,
+        analysis_hash
+    )
+
+    if existing:
+
+        update_current_analysis(
+            db,
+            user_id,
+            existing
+        )
+
+        return existing
+
+    # Prevent concurrent identical requests from both paying for the AI call.
+    # The lock lasts until this transaction commits or rolls back.
+    lock_analysis_creation(db, user_id, analysis_hash)
 
     existing = get_analysis_by_hash(
         db,
@@ -670,11 +705,11 @@ def update_current_analysis(
 
     return profile
 
-def extract_resume_text(pdf_path):
+def extract_resume_text(pdf_bytes: bytes):
 
     try:
 
-        with pymupdf.open(pdf_path) as document:
+        with pymupdf.open(stream=pdf_bytes, filetype="pdf") as document:
 
             if document.needs_pass:
                 raise InvalidInputError(
@@ -705,17 +740,11 @@ def extract_resume_text(pdf_path):
     return text.strip()
 
 
-load_dotenv()
-
-api_key = os.getenv(
-    "GOOGLE_API_KEY"
-)
-
 client = None
 
-if api_key:
+if GOOGLE_API_KEY:
     client = genai.Client(
-        api_key=api_key
+        api_key=GOOGLE_API_KEY
     )
 
 MODELS = [
@@ -972,7 +1001,7 @@ Every value except "others" must be a plain text string (short lines, no nested 
 def process_submission(
         db,
         user,
-        resume_file_path=None,
+        resume_bytes=None,
         original_filename=None,
         job_description=None
 ):
@@ -991,7 +1020,7 @@ def process_submission(
     # Old users can skip an input if something is already saved.
     missing = []
 
-    if not resume_file_path and latest_resume is None:
+    if not resume_bytes and latest_resume is None:
         missing.append("a resume")
 
     if not job_description and latest_jd is None:
@@ -1005,10 +1034,10 @@ def process_submission(
         )
 
     # Fill in any missing input with the saved text
-    if resume_file_path:
+    if resume_bytes:
 
         resume_text = extract_resume_text(
-            resume_file_path
+            resume_bytes
         )
 
         if len(resume_text) < MIN_RESUME_CHARS:

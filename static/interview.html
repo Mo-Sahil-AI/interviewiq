@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07151a">
+  <title>InterviewIQ Mock Interview</title>
+  <link rel="stylesheet" href="/static/interview.css">
+</head>
+<body>
+  <a class="skip-link" href="#interview-content">Skip to interview</a>
+  <main id="interview-content" class="shell">
+    <header>
+      <p class="eyebrow">InterviewIQ</p>
+      <h1>Voice mock interview</h1>
+      <p class="muted">Log in first, then answer each question aloud.</p>
+    </header>
+
+    <section class="card controls" aria-labelledby="setup-title">
+      <h2 id="setup-title">Interview setup</h2>
+      <div class="fields">
+        <label for="duration-minutes">
+          Duration (minutes)
+          <input id="duration-minutes" name="duration_minutes" type="number" min="1" max="60" step="1" value="10" inputmode="numeric" autocomplete="off" required>
+          <small class="field-help">Choose any whole number from 1 to 60 minutes.</small>
+        </label>
+        <label for="interview-type">
+          Interview type
+          <select id="interview-type" name="interview_type">
+            <option value="mixed" selected>Mixed</option>
+            <option value="technical">Technical</option>
+            <option value="behavioral">Behavioral</option>
+            <option value="resume_based">Resume based</option>
+          </select>
+        </label>
+      </div>
+      <div class="actions">
+        <button id="start" type="button">Start interview</button>
+        <button id="stop" type="button" class="secondary" disabled>End interview</button>
+      </div>
+      <p id="status" class="status" role="status" aria-live="polite">Ready</p>
+    </section>
+
+    <section class="card live" aria-labelledby="live-title">
+      <div class="live-header">
+        <h2 id="live-title">Live interview</h2>
+        <strong id="timer" aria-label="Time remaining">--:--</strong>
+      </div>
+      <p id="question" class="question" aria-live="polite">Your first question will appear here.</p>
+      <p id="listening" class="listening" hidden>Listening… please answer aloud.</p>
+    </section>
+
+    <section class="card" aria-labelledby="transcript-title">
+      <h2 id="transcript-title">Transcript</h2>
+      <ol id="transcript" class="transcript">
+        <li class="muted">Your completed answers will appear here.</li>
+      </ol>
+    </section>
+  </main>
+  <script src="/static/interview.js"></script>
+</body>
+</html>

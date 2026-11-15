@@ -16,7 +16,7 @@ import re
 import uuid
 
 from pydantic import BaseModel, Field, ValidationError, field_validator
-from sqlalchemy import func
+from sqlalchemy import func, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
@@ -329,11 +329,31 @@ def _analysis_for(db: Session, user, resume, jd):
     )
 
 
+def _question_lock_key(user_id) -> int:
+    """Return a stable signed bigint for a PostgreSQL transaction advisory lock."""
+    digest = hashlib.sha256(
+        f"questions:{user_id}".encode("utf-8")
+    ).digest()
+    return int.from_bytes(digest[:8], byteorder="big", signed=True)
+
+
+def lock_question_generation(db: Session, user_id) -> None:
+    """Serialize question generation and batch allocation for one user."""
+    db.execute(
+        text("SELECT pg_advisory_xact_lock(CAST(:lock_key AS bigint))"),
+        {"lock_key": _question_lock_key(user_id)},
+    )
+
+
 def generate_questions(db: Session, user, count: int = 10, categories=None, difficulty=None) -> dict:
     """Create up to `count` NEW questions and save them. Returns a dict for the API."""
 
     count = max(1, min(int(count), MAX_QUESTIONS))
     categories = list(dict.fromkeys(categories)) if categories else None
+
+    # Hold the lock through the AI call and commit so concurrent requests for one
+    # user cannot generate the same questions or allocate the same batch number.
+    lock_question_generation(db, user.id)
 
     resume, jd = _current_documents(db, user)
     analysis = _analysis_for(db, user, resume, jd)

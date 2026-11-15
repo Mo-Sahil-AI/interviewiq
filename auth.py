@@ -1,36 +1,29 @@
 import logging
-import os
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
 
 import jwt
 import redis
-from dotenv import load_dotenv
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, HTTPException, Request, WebSocket, status
 from pwdlib import PasswordHash
 from sqlalchemy.orm import Session
 
 from database import get_db
+from config import ACCESS_TOKEN_EXPIRE_MINUTES, REDIS_URL, SECRET_KEY
 from models import User
 
-load_dotenv()
-
-_secret_key = os.getenv("SECRET_KEY")
-if not _secret_key:
-    raise ValueError("SECRET_KEY not found in .env")
-
-SECRET_KEY: str = _secret_key
-
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "2880"))
 COOKIE_NAME = "access_token"
 
 logger = logging.getLogger(__name__)
 
 # Redis remembers which tokens were logged out (until they would have expired anyway)
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 _redis_client: redis.Redis | None = None
+
+
+class TokenRevocationUnavailableError(Exception):
+    """Redis could not be reached to read or write token revocation state."""
 
 
 def _redis() -> redis.Redis:
@@ -92,7 +85,7 @@ def revoke_token(token: str) -> bool:
         _redis().set(_revoked_key(jti), "1", ex=seconds_left)
     except redis.RedisError:
         logger.exception("Could not revoke the token: Redis is unavailable")
-        return False
+        raise TokenRevocationUnavailableError from None
     return True
 
 
@@ -100,35 +93,77 @@ def is_token_revoked(jti: str) -> bool:
     try:
         return bool(_redis().exists(_revoked_key(jti)))
     except redis.RedisError:
-        # If Redis is down we let the request through rather than lock everyone out.
         logger.exception("Could not check token revocation: Redis is unavailable")
-        return False
+        raise TokenRevocationUnavailableError from None
+
+
+def check_redis() -> None:
+    """Raise when Redis cannot serve token-revocation operations."""
+    try:
+        _redis().ping()
+    except redis.RedisError:
+        logger.exception("Could not reach Redis: Redis is unavailable")
+        raise TokenRevocationUnavailableError from None
+
+
+def _authenticate_token(token: str | None, db: Session) -> User:
+    error = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Not logged in or session expired",
+    )
+
+    if not token:
+        raise error
+
+    try:
+        payload = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM],
+            options={"require": ["sub", "exp", "iat", "jti"]},
+        )
+        subject = payload["sub"]
+        if not isinstance(subject, str):
+            raise ValueError("Token subject must be a string")
+        user_id = uuid.UUID(subject)
+    except (jwt.InvalidTokenError, ValueError, TypeError):
+        raise error
+
+    jti = payload.get("jti")
+    if not isinstance(jti, str) or not jti:
+        raise error
+
+    try:
+        revoked = is_token_revoked(jti)
+    except TokenRevocationUnavailableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Session service is temporarily unavailable",
+        ) from exc
+    if revoked:
+        raise error
+
+    user = db.get(User, user_id)
+    if user is None:
+        raise error
+    password_changed_at = user.password_changed_at
+    token_issued_at = payload["iat"]
+    if password_changed_at is not None:
+        changed_at = password_changed_at.replace(tzinfo=timezone.utc).timestamp()
+        if token_issued_at < changed_at:
+            raise error
+    return user
 
 
 def get_current_user(
     request: Request,
     db: Session = Depends(get_db),
 ) -> User:
-    error = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Not logged in or session expired",
-    )
+    return _authenticate_token(request.cookies.get(COOKIE_NAME), db)
 
-    token = request.cookies.get(COOKIE_NAME)
-    if not token:
-        raise error
 
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = uuid.UUID(payload.get("sub", ""))
-    except (jwt.InvalidTokenError, ValueError):
-        raise error
-
-    jti = payload.get("jti")
-    if jti and is_token_revoked(jti):
-        raise error
-
-    user = db.get(User, user_id)
-    if user is None:
-        raise error
-    return user
+def get_current_websocket_user(
+    websocket: WebSocket,
+    db: Session,
+) -> User:
+    return _authenticate_token(websocket.cookies.get(COOKIE_NAME), db)

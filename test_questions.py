@@ -387,10 +387,7 @@ def test_users_only_ever_see_their_own_questions(client, gemini):
 
 # ================================================================ two requests at once
 def test_double_click_never_stores_a_question_twice(gemini):
-    barrier = threading.Barrier(2, timeout=10)
-
     def behaviour(n, prompt):
-        barrier.wait()                                   # both requests are inside the AI call together
         return json.dumps({"questions": POOL[:3]})
 
     gemini(behaviour)
@@ -420,6 +417,17 @@ def test_double_click_never_stores_a_question_twice(gemini):
     assert count("questions") == 3                       # each question stored exactly once
     assert sum(r["saved"] for r in results) == 3         # ...by exactly one of the two requests
     assert sum(r["duplicates_skipped"] for r in results) == 3
+    with database.engine.connect() as conn:
+        assert conn.exec_driver_sql(
+            """SELECT count(*) FROM (
+                   SELECT user_id, batch_no, item_no
+                   FROM questions
+                   WHERE user_id = %s
+                   GROUP BY user_id, batch_no, item_no
+                   HAVING count(*) > 1
+               ) duplicates""",
+            (user_id,),
+        ).scalar() == 0
 
 
 # ================================================================ database
@@ -467,7 +475,12 @@ def test_database_refuses_an_unknown_category_or_a_repeat(client, gemini):
 EXPECTED_CATEGORIES = ["technical", "resume_based", "behavioral", "situational", "hr"]
 
 
-def test_options_need_no_login_and_list_every_category(client):
+def test_options_require_login(client):
+    assert client.get("/questions/options").status_code == 401
+
+
+def test_authenticated_options_list_every_category(client):
+    login(client)
     r = client.get("/questions/options")
     assert r.status_code == 200
     body = r.json()
