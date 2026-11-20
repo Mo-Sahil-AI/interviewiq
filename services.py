@@ -717,7 +717,7 @@ def extract_resume_text(pdf_bytes: bytes):
                     "Remove the password and upload it again."
                 )
 
-            text = "".join(
+            text = "\n\n".join(
                 str(page.get_text("text"))
                 for page in document
             )

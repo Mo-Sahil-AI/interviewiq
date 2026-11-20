@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+import smtplib
 import time
 import uuid
 from datetime import datetime, timezone
@@ -377,9 +378,9 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
                 f"{verification_token}"
             ),
         )
-    except email_service.EmailConfigurationError:
+    except (email_service.EmailConfigurationError, smtplib.SMTPException, OSError) as exc:
         logger.warning(
-            "Email verification was not sent because SMTP is not configured"
+            "Email verification was not sent: %s", exc
         )
         verification_message = (
             "Account created. Configure email delivery to verify your address."
@@ -442,11 +443,18 @@ def logout(request: Request, response: Response):
 
 @app.delete("/account", status_code=204)
 def delete_account(
+    request: Request,
     response: Response,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Permanently delete the authenticated user and all owned documents."""
+    token = request.cookies.get(COOKIE_NAME)
+    if token:
+        try:
+            revoke_token(token)
+        except TokenRevocationUnavailableError:
+            pass
     user_id = current_user.id
     try:
         # Clear references from the profile before deleting the records it points to.
@@ -1035,9 +1043,11 @@ async def interview_voice_stream(
 
     session = interview_service.get_owned_session(db, current_user.id, session_id)
     if session is None:
+        await websocket.accept()
         await websocket.close(code=4404, reason="Interview not found")
         return
     if session.status != "active" or session.started_at is None:
+        await websocket.accept()
         await websocket.close(code=4409, reason="Interview is not active")
         return
 
@@ -1312,6 +1322,10 @@ async def interview_voice_stream(
     except (WebSocketDisconnect, WebSocketDisconnected):
         if session.status == "active":
             interview_service.finish_session(db, session, "interrupted")
+    except Exception:
+        logger.exception("Interview voice stream error")
+        if session.status == "active":
+            interview_service.finish_session(db, session, "failed")
 
 
 @app.post("/account/verification-email", status_code=202)
@@ -1328,10 +1342,10 @@ def request_verification_email(
             "Verify your InterviewIQ email",
             f"Use this verification token with POST /account/verify-email:\n\n{token}",
         )
-    except email_service.EmailConfigurationError as exc:
+    except (email_service.EmailConfigurationError, smtplib.SMTPException, OSError) as exc:
         raise HTTPException(
             status_code=503,
-            detail="Email service is not configured",
+            detail="Email service is unavailable. Please try again later.",
         ) from exc
     return {"message": "Verification email sent"}
 
@@ -1387,10 +1401,10 @@ def request_password_reset(
                 "Reset your InterviewIQ password",
                 f"Use this password-reset token with POST /account/password/reset/confirm:\n\n{token}",
             )
-        except email_service.EmailConfigurationError as exc:
+        except (email_service.EmailConfigurationError, smtplib.SMTPException, OSError) as exc:
             raise HTTPException(
                 status_code=503,
-                detail="Email service is not configured",
+                detail="Email service is unavailable. Please try again later.",
             ) from exc
     return {"message": "If that email exists, reset instructions were sent"}
 

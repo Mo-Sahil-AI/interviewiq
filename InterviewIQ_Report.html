@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InterviewIQ · AI Interview Chat Assistant — Comprehensive Project Report</title>
+<style>
+  :root{
+    --ink:#111827; --muted:#4b5563; --line:#d1d5db;
+    --brand:#1e3a8a; --brand-soft:#eff6ff; --teal:#0f766e; --teal-soft:#f0fdfa;
+    --code-bg:#f8fafc; --code-ink:#334155;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;color:var(--ink);
+    font-family:"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    font-size:9.5pt;line-height:1.5;background:#fff;}
+
+  @page{
+    size:A4; margin:18mm 16mm;
+    @top-left{content:"InterviewIQ · AI Interview Chat Assistant";font-size:7.5pt;color:var(--muted);}
+    @top-right{content:"ML Quad · SparkX 3.0";font-size:7.5pt;color:var(--muted);}
+    @bottom-right{content:"Page " counter(page) " / " counter(pages);font-size:7.5pt;color:var(--muted);}
+  }
+  @page :first{ @top-left{content:none;} @top-right{content:none;} @bottom-right{content:none;} }
+
+  h1,h2,h3,h4{line-height:1.25;margin:0 0 .35em;}
+  h1{font-size:15pt;color:var(--brand);}
+  h2{font-size:12pt;color:var(--brand);border-bottom:1.5px solid var(--brand);
+     padding-bottom:4px;margin-top:1.1em;}
+  h2 .num{display:inline-block;background:var(--brand);color:#fff;border-radius:3px;
+     padding:1px 7px;font-size:9pt;margin-right:7px;vertical-align:middle;}
+  h3{font-size:10.5pt;color:var(--teal);margin-top:.9em;}
+  h4{font-size:9.5pt;color:var(--ink);margin-top:.7em;}
+  p{margin:.2em 0 .5em;text-align:justify;}
+  a{color:var(--brand);text-decoration:none;}
+  ul,ol{margin:.15em 0 .5em;padding-left:1.3em;}
+  li{margin:.1em 0;}
+  .lead{font-size:10pt;color:var(--muted);font-style:italic;}
+  .page-break{page-break-before:always;}
+  .avoid-break{page-break-inside:avoid;}
+
+  /* Cover */
+  .cover{page-break-after:always;padding-top:35mm;text-align:center;}
+  .cover .badge{display:inline-block;background:var(--brand-soft);color:var(--brand);
+     font-weight:700;letter-spacing:1px;border-radius:999px;padding:4px 14px;
+     font-size:7.5pt;text-transform:uppercase;}
+  .cover .logo{font-size:34pt;font-weight:800;color:var(--brand);margin:10px 0 2px;letter-spacing:-1px;}
+  .cover .logo span{color:var(--teal);}
+  .cover .tag{font-size:11pt;color:var(--ink);font-weight:600;margin:0 0 4px;}
+  .cover .sub{font-size:9pt;color:var(--muted);margin:0 0 14px;}
+  .cover .rule{height:2px;width:70px;margin:0 auto 18px;background:linear-gradient(90deg,var(--brand),var(--teal));}
+  .cover .info{display:inline-grid;grid-template-columns:auto 1fr;gap:5px 18px;
+     text-align:left;background:#fff;border:1px solid var(--line);border-radius:8px;
+     padding:14px 22px;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+  .cover .info .k{color:var(--muted);font-weight:600;font-size:8pt;text-transform:uppercase;letter-spacing:.3px;}
+  .cover .info .v{font-weight:700;color:var(--ink);font-size:9.5pt;}
+  .cover .foot{margin-top:22px;color:var(--muted);font-size:7.5pt;}
+
+  /* TOC */
+  .toc{page-break-after:always;}
+  .toc ol{list-style:none;padding:0;}
+  .toc li{padding:4px 0;border-bottom:1px dotted var(--line);font-size:9.5pt;}
+  .toc li b{color:var(--brand);margin-right:5px;}
+
+  /* Tables */
+  table{width:100%;border-collapse:collapse;margin:.4em 0 .7em;font-size:8.5pt;}
+  th,td{border:1px solid var(--line);padding:5px 7px;text-align:left;vertical-align:top;}
+  th{background:var(--brand);color:#fff;font-weight:600;}
+  tbody tr:nth-child(even){background:#f9fafb;}
+  td code,p code,li code{background:var(--brand-soft);color:var(--brand);padding:1px 3px;
+     border-radius:2px;font-family:"Consolas",Menlo,monospace;font-size:8pt;}
+
+  /* Callouts */
+  .box{border-left:3px solid var(--teal);background:var(--teal-soft);border-radius:0 5px 5px 0;
+     padding:7px 10px;margin:.5em 0;}
+  .box.warn{border-left-color:#d97706;background:#fffbeb;}
+  .box.key{border-left-color:var(--brand);background:var(--brand-soft);}
+  .box h4{margin-top:0;color:var(--teal);font-size:9pt;}
+  .box.warn h4{color:#d97706;} .box.key h4{color:var(--brand);}
+
+  /* Code */
+  pre{background:var(--code-bg);color:var(--code-ink);border:1px solid var(--line);
+     border-left:3px solid var(--brand);border-radius:5px;padding:8px 10px;overflow:auto;
+     font-family:"Consolas",Menlo,monospace;font-size:7.5pt;line-height:1.4;margin:.4em 0 .7em;}
+  pre .c{color:#9ca3af;font-style:italic;} pre .s{color:#0f766e;} pre .k{color:#1e3a8a;font-weight:600;}
+
+  /* Stats */
+  .grid{display:flex;flex-wrap:wrap;gap:8px;margin:.4em 0 .7em;}
+  .stat{flex:1 1 110px;background:#fff;border:1px solid var(--line);border-radius:6px;
+     padding:8px 6px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.03);}
+  .stat .n{font-size:14pt;font-weight:800;color:var(--brand);line-height:1.1;}
+  .stat .l{font-size:7.5pt;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;margin-top:2px;}
+
+  .arch{background:var(--code-bg);border:1px solid var(--line);border-radius:6px;padding:8px;
+     font-family:"Consolas",Menlo,monospace;font-size:7pt;white-space:pre;overflow:auto;color:var(--code-ink);line-height:1.35;}
+  .foot-end{margin-top:20px;padding-top:7px;border-top:1px solid var(--line);color:var(--muted);font-size:7.5pt;}
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<section class="cover">
+  <div class="badge">SparkX 3.0 · 30-Day Innovation Challenge</div>
+  <div class="logo">Interview<span>IQ</span></div>
+  <div class="tag">AI Interview Chat Assistant</div>
+  <div class="sub">Comprehensive Technical Report: Architecture, Implementation, and Analysis</div>
+  <div class="rule"></div>
+
+  <div class="info">
+    <div class="k">Project</div><div class="v">InterviewIQ — AI Interview Chat Assistant</div>
+    <div class="k">Team</div><div class="v">ML Quad</div>
+    <div class="k">Members</div><div class="v">Mo Sahil · Mohd Amaan Siddiqui · Md Anas · Rushan Alam</div>
+    <div class="k">Document</div><div class="v">Final Project Report</div>
+    <div class="k">Repository</div><div class="v">github.com/Mo-Sahil-AI/interviewiq</div>
+    <div class="k">Demo Event</div><div class="v">25–26 November 2026</div>
+    <div class="k">Stack</div><div class="v">FastAPI · PostgreSQL · Redis · Google Gemini · Web Speech API</div>
+  </div>
+
+  <div class="foot">Prepared for the concluding evaluation panel of SparkX 3.0 · Confidential — Team ML Quad</div>
+</section>
+
+<!-- TOC -->
+<section class="toc">
+  <h1>Table of Contents</h1>
+  <ol>
+    <li><b>1.</b> Executive Summary &amp; Introduction</li>
+    <li><b>2.</b> Problem Statement &amp; Motivation</li>
+    <li><b>3.</b> System Architecture &amp; Technology Stack</li>
+    <li><b>4.</b> Document Processing &amp; AI Analysis Engine</li>
+    <li><b>5.</b> Adaptive Question Generation System</li>
+    <li><b>6.</b> Voice Mock Interview Engine</li>
+    <li><b>7.</b> Voice Analysis &amp; Pronunciation Pipeline</li>
+    <li><b>8.</b> Personalized Coaching Assistant</li>
+    <li><b>9.</b> Authentication, Security &amp; Account Management</li>
+    <li><b>10.</b> Database Schema &amp; Data Modeling</li>
+    <li><b>11.</b> API Design &amp; State Management</li>
+    <li><b>12.</b> Testing, CI/CD &amp; Quality Assurance</li>
+    <li><b>13.</b> Deployment &amp; Operational Configuration</li>
+    <li><b>14.</b> Conclusion</li>
+  </ol>
+</section>
+
+<!-- 1. INTRO -->
+<section>
+  <h2><span class="num">1</span> Executive Summary &amp; Introduction</h2>
+  <p class="lead">InterviewIQ is a comprehensive, web-based application engineered to process user-uploaded resumes and job descriptions, generating tailored interview questions and conducting voice-based mock interviews with real-time performance analytics and a personalized coaching assistant.</p>
+  <p>
+    The recruitment landscape has increasingly shifted toward automated screening, yet the preparation phase for candidates remains largely manual and unstructured. InterviewIQ addresses this by providing a closed-loop preparation environment. The system extracts text from uploaded PDF resumes, compares them against target job descriptions using a large language model (Gemini), and produces a structured gap analysis. It then generates non-repeating interview questions across multiple categories and difficulty levels. 
+  </p>
+  <p>
+    The core functionality is a live, voice-enabled mock interview conducted over WebSockets. The system speaks the questions, transcribes the user's spoken answers, evaluates the content and delivery in real-time, adapts the subsequent questions based on performance, and generates a final performance summary. A supplementary chat assistant allows users to query their own data for further preparation. This report details the architectural decisions, algorithmic implementations, and engineering constraints managed during the development of the system over the 30-day challenge period, covering all 30+ source files in the repository.
+  </p>
+
+  <div class="grid avoid-break">
+    <div class="stat"><div class="n">11</div><div class="l">Database Tables</div></div>
+    <div class="stat"><div class="n">30+</div><div class="l">API Endpoints</div></div>
+    <div class="stat"><div class="n">5</div><div class="l">Question Categories</div></div>
+    <div class="stat"><div class="n">3</div><div class="l">AI Fallback Models</div></div>
+    <div class="stat"><div class="n">10</div><div class="l">Voice Metrics</div></div>
+  </div>
+</section>
+
+<!-- 2. PROBLEM -->
+<section class="page-break">
+  <h2><span class="num">2</span> Problem Statement &amp; Motivation</h2>
+  <p>Current interview preparation tools exhibit several functional limitations that reduce their effectiveness for job seekers. These limitations can be categorized into three primary areas:</p>
+  <ol>
+    <li><strong>Lack of Contextual Relevance:</strong> Standard question banks provide generic queries. They do not analyze the specific intersection of a candidate's resume and the target job description. This leads to preparation that misses critical skill gaps and fails to address the specific requirements of the role being applied for.</li>
+    <li><strong>Absence of Vocal Practice:</strong> Most platforms rely on text input or multiple-choice selections. Real interviews require verbal articulation under time pressure. Text-based tools do not measure speaking fluency, pacing, filler word usage, or the ability to structure a spoken response coherently.</li>
+    <li><strong>Subjective Feedback Mechanisms:</strong> Candidates rarely receive objective, immediate feedback on both the technical content of their answers and the quality of their delivery without hiring expensive human coaches. Existing automated tools often provide binary correct/incorrect feedback, which is insufficient for behavioral or situational questions.</li>
+  </ol>
+  <p>InterviewIQ addresses these issues by combining document analysis, adaptive question generation, real-time voice processing, and personalized coaching into a single, self-hostable backend system. The motivation for this project stems from the need to democratize access to high-quality, personalized interview coaching.</p>
+
+  <div class="box warn">
+    <h4>Engineering Constraints Addressed</h4>
+    <ul style="margin-bottom:0">
+      <li>AI API costs and latency require strict deduplication of identical inputs to prevent redundant processing.</li>
+      <li>Concurrent user actions (e.g., double-clicking submit) must not create duplicate database records or trigger race conditions.</li>
+      <li>User-uploaded documents must be treated as untrusted data to prevent prompt injection attacks against the LLM.</li>
+      <li>Voice processing must not introduce latency that disrupts the real-time interview flow, necessitating asynchronous background processing for complex metrics.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 3. ARCHITECTURE -->
+<section class="page-break">
+  <h2><span class="num">3</span> System Architecture &amp; Technology Stack</h2>
+  <p>The application follows a modular monolith architecture built on FastAPI. The HTTP routing and middleware are centralized in <code>main.py</code>, while domain logic is separated into distinct service modules. The frontend is a lightweight vanilla JavaScript client served as static files from the <code>static/</code> directory, minimizing build complexity and deployment overhead.</p>
+
+  <h3>3.1 High-Level Component Flow</h3>
+  <div class="arch">┌────────────────────────────────────────────────────────────────────┐
+│  CLIENT (Browser) · static/app.* (Workspace) & static/interview.*  │
+└──────────────┬──────────────────────────────────────────┬──────────┘
+   HTTPS + HttpOnly JWT cookie                  WebSocket /interviews/{id}/voice
+┌──────────────▼──────────────────────────────────────────▼──────────┐
+│  FASTAPI SERVER (main.py, config.py, database.py)                  │
+│  Middleware: Request ID, Security Headers, Payload limits (413)    │
+│  Modules: Auth, Services, Questions, Interviews, Voice, Assistant  │
+└──────────────┬──────────────────────────────────────────┬──────────┘
+   SQLAlchemy 2.1 ORM (models.py)                        Redis 8
+┌──────────────▼──────────────┐            ┌──────────────▼──────────┐
+│  PostgreSQL 18              │            │  Token Revocation &     │
+│  (db_structure.sql)         │            │  Async Audio Queue      │
+└─────────────────────────────┘            └─────────────────────────┘
+        │
+   Google Gemini API (3-model fallback)   +   Optional: Azure Speech / wav2vec2 worker</div>
+
+  <h3>3.2 Technology Stack Justification</h3>
+  <table>
+    <thead><tr><th style="width:22%">Layer</th><th style="width:28%">Technology</th><th>Justification</th></tr></thead>
+    <tbody>
+      <tr><td>Web Framework</td><td>FastAPI 0.162 + Uvicorn</td><td>Native async support for WebSockets, automatic OpenAPI schema generation, and high throughput.</td></tr>
+      <tr><td>Database</td><td>PostgreSQL 18 + SQLAlchemy 2</td><td>ACID compliance, JSONB for AI outputs, and native advisory locks for concurrency control.</td></tr>
+      <tr><td>Cache/Queue</td><td>Redis 8</td><td>Sub-millisecond token revocation checks and reliable background task queuing for audio processing.</td></tr>
+      <tr><td>AI/ML</td><td>Google Gemini + wav2vec2</td><td>Gemini provides structured JSON outputs; wav2vec2 enables local, privacy-preserving phoneme analysis.</td></tr>
+      <tr><td>Document Parsing</td><td>PyMuPDF</td><td>Fast, in-memory PDF text extraction without requiring external system dependencies.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 4. DOC PROCESSING -->
+<section class="page-break">
+  <h2><span class="num">4</span> Document Processing &amp; AI Analysis Engine</h2>
+  <p>The core document processing logic is encapsulated in <code>services.py</code> and <code>helpers.py</code>. This module handles the ingestion of PDF resumes, text extraction, version control, and the initial AI-driven gap analysis.</p>
+
+  <h3>4.1 PDF Extraction &amp; Validation</h3>
+  <p>When a user uploads a resume, the system uses PyMuPDF to extract text in memory. The <code>extract_resume_text</code> function enforces strict validation: files must be valid PDFs, cannot be password-protected, and must yield between 50 and 30,000 characters of readable text. This prevents the system from processing scanned images or corrupted files, returning specific HTTP 422 errors with user-friendly messages.</p>
+
+  <h3>4.2 Idempotent Versioning System</h3>
+  <p>To prevent redundant AI API calls, the system implements a content-hash-based versioning system. Every resume and job description is hashed using SHA-256. Before creating a new database record, the system queries for the latest version. If the hash matches, the existing record is reused. If it differs, a new version is created.</p>
+  <p>To handle race conditions where two identical requests arrive simultaneously, the system uses a retry loop with a maximum of three attempts, relying on PostgreSQL unique constraints to reject the duplicate. This ensures idempotency without requiring complex distributed locks.</p>
+  <pre><span class="k">for</span> _ <span class="k">in</span> range(MAX_VERSION_RETRIES):
+    latest = get_latest_resume(db, user_id)
+    <span class="k">if</span> latest <span class="k">and</span> latest.resume_hash == resume_hash: <span class="k">return</span> latest
+    resume = Resume(version_no=(latest.version_no+1 <span class="k">if</span> latest <span class="k">else</span> 1), ...)
+    db.add(resume)
+    <span class="k">try</span>: db.commit()
+    <span class="k">except</span> IntegrityError: db.rollback(); <span class="k">continue</span></pre>
+
+  <h3>4.3 AI Gap Analysis &amp; Model Fallback</h3>
+  <p>The analysis module constructs a prompt containing the resume and job description, enclosed in random UUID marker fences to establish a trust boundary. The system requests a structured JSON response. To ensure reliability, the system iterates through a list of three Gemini models in <code>services.py</code>. If a model fails due to network issues, rate limits, or returns invalid JSON that fails Pydantic validation, the system catches the exception and attempts the next model. Only if all models fail does the endpoint return an HTTP 503 status.</p>
+  <pre>MODELS = [<span class="s">"models/gemini-flash-lite-latest"</span>,
+          <span class="s">"models/gemini-3.1-flash-lite"</span>,
+          <span class="s">"models/gemini-3.5-flash"</span>]
+<span class="k">for</span> m <span class="k">in</span> MODELS:
+    <span class="k">try</span>: <span class="k">return</span> parser(client.models.generate_content(model=m, ...).text)
+    <span class="k">except</span> Exception <span class="k">as</span> e: last = e; <span class="k">continue</span>
+<span class="k">raise</span> AnalysisUnavailableError(<span class="s">f"All AI models failed: {last}"</span>)</pre>
+</section>
+
+<!-- 5. QUESTIONS -->
+<section class="page-break">
+  <h2><span class="num">5</span> Adaptive Question Generation System</h2>
+  <p>The question generation logic is implemented in <code>question_service.py</code>. This module is responsible for creating tailored interview questions while strictly enforcing a zero-duplication policy.</p>
+
+  <h3>5.1 Prompt Construction</h3>
+  <p>The <code>build_prompt</code> function assembles the context for the LLM. It includes the current resume, job description, and the structured analysis notes (missing requirements, strengths). Crucially, it includes a list of up to 150 previously generated questions, explicitly instructing the model not to rephrase them. The prompt enforces a strict JSON output schema containing the question text, category, difficulty, target skill, and ideal answer points.</p>
+
+  <h3>5.2 Three-Layer Deduplication Algorithm</h3>
+  <p>Preventing question repetition is handled at three distinct layers to ensure high quality:</p>
+  <ol>
+    <li><strong>Prompt Layer:</strong> The LLM is provided with the text of previously generated questions and explicitly instructed not to rephrase them.</li>
+    <li><strong>Application Layer:</strong> The system normalizes the generated questions by removing stop words and applying a basic stemming algorithm. It calculates the Jaccard similarity between the content words of the new question and existing questions. The formula used is: <br><code>Similarity(A, B) = |A ∩ B| / |A ∪ B|</code>. If the similarity exceeds 0.6, the question is discarded as a near-duplicate.</li>
+    <li><strong>Database Layer:</strong> The <code>questions</code> table enforces a unique constraint on <code>(user_id, question_hash)</code>. The insertion query uses <code>ON CONFLICT DO NOTHING</code> to silently ignore exact duplicates that bypass the application layer.</li>
+  </ol>
+
+  <h3>5.3 Concurrency Control</h3>
+  <p>Question generation is serialized per user using PostgreSQL transaction advisory locks. The <code>lock_question_generation</code> function acquires a lock based on the user's ID, ensuring that concurrent requests from the same user do not result in duplicate batch numbers or redundant AI calls.</p>
+</section>
+
+<!-- 6. MOCK INTERVIEW -->
+<section class="page-break">
+  <h2><span class="num">6</span> Voice Mock Interview Engine</h2>
+  <p>The mock interview engine is the most complex component of the system, distributed across <code>interview_service.py</code>, <code>interview_summary_service.py</code>, and <code>adaptive_interviewer.py</code>. It manages the lifecycle of a voice-based interview session.</p>
+
+  <h3>6.1 Session Lifecycle Management</h3>
+  <p>In <code>interview_service.py</code>, the <code>create_session</code> function initializes an interview by snapshotting the current resume and job description versions. This ensures that even if the user updates their documents later, the interview remains consistent. The system enforces a strict state machine: sessions transition from <code>preparing</code> to <code>active</code> upon starting, and to <code>completed</code>, <code>interrupted</code>, or <code>failed</code> upon termination. A partial unique index in the database ensures a user can only have one active or preparing interview at a time.</p>
+
+  <h3>6.2 WebSocket Communication Flow</h3>
+  <p>The live interview is conducted via the WebSocket endpoint <code>/interviews/{id}/voice</code> defined in <code>main.py</code>. The client uses the browser's <code>SpeechSynthesis</code> API to read the question text and the <code>SpeechRecognition</code> API to capture the user's answer. The transcript is sent to the server as a JSON payload:</p>
+  <pre><span class="c">// Client-side WebSocket message</span>
+socket.send(JSON.stringify({
+  type: <span class="s">"answer_transcript"</span>,
+  text: event.results[0][0].transcript
+}));</pre>
+  <p>Upon receiving the transcript, the server records the turn, calculates deterministic voice metrics, and invokes the adaptive interviewer to generate the next question. The connection terminates automatically when the configured session duration expires.</p>
+
+  <h3>6.3 Adaptive Interviewer Logic</h3>
+  <p>The <code>adaptive_interviewer.py</code> module is responsible for evaluating the user's answer and selecting the next question. After each answer, the system sends the resume, job description, interview history, and the current transcript to the LLM. The model is instructed to return a validated JSON object containing:</p>
+  <ul>
+    <li><code>score</code> (0-100): An evaluation of the answer's quality.</li>
+    <li><code>feedback</code>: Specific, concise feedback for the user.</li>
+    <li><code>strengths</code> and <code>gaps</code>: Arrays identifying key points.</li>
+    <li><code>next_question</code>: An object containing the category, difficulty, target skill, and text for the subsequent question.</li>
+  </ul>
+  <p>The system uses this output to adjust the difficulty and category of the subsequent question, ensuring the interview adapts to the candidate's demonstrated proficiency. If the AI model fails during the interview, the system falls back to the next saved question from the question bank, ensuring the interview continues without interruption.</p>
+
+  <h3>6.4 Interview Summarization</h3>
+  <p>Upon completion, <code>interview_summary_service.py</code> aggregates the data from all turns. It calculates an overall score, identifies strong and weak areas, lists skills to learn, and generates a comprehensive text summary. This summary is persisted in the <code>interview_summaries</code> table and made available via the <code>/interviews/{id}/summary</code> endpoint.</p>
+</section>
+
+<!-- 7. VOICE ANALYSIS -->
+<section class="page-break">
+  <h2><span class="num">7</span> Voice Analysis &amp; Pronunciation Pipeline</h2>
+  <p>The voice analysis system is split into two parts: deterministic metrics calculated in real-time, and asynchronous pronunciation scoring handled by a background worker. The relevant files are <code>voice_analysis_service.py</code>, <code>audio_analysis_queue.py</code>, <code>speech_service.py</code>, and <code>pronunciation_worker.py</code>.</p>
+
+  <h3>7.1 Deterministic Delivery Metrics</h3>
+  <p>To avoid the latency and cost of using an LLM for basic speech analysis, the system calculates delivery metrics using deterministic algorithms in <code>voice_analysis_service.py</code>. The <code>analyze_transcript</code> function processes the text and timing data to compute:</p>
+  <ul>
+    <li><strong>Speaking Rate (WPM):</strong> Calculated by dividing the word count by the duration in minutes. <code>WPM = Total Words / (Duration_ms / 60000)</code>.</li>
+    <li><strong>Fluency Score:</strong> Derived by subtracting penalties for filler words and long pauses from a base score of 100. <code>Fluency = 100 - (5 * fillers) - (6 * long_pauses) - (2 * pauses)</code>.</li>
+    <li><strong>Clarity Score:</strong> Calculated by penalizing repeated words and filler usage. <code>Clarity = 100 - (3 * repeated) - (2 * fillers)</code>.</li>
+    <li><strong>Grammar Score:</strong> Assigned based on total word count, with a bonus applied if the transcript ends with standard punctuation (. ! ?).</li>
+    <li><strong>Pace Score:</strong> Evaluated against ideal speaking ranges. 95 if 120-180 WPM, 80 if 100-210 WPM, else 60.</li>
+  </ul>
+  <p>These metrics are stored in the <code>voice_analyses</code> table and returned to the client immediately after each turn.</p>
+
+  <h3>7.2 Asynchronous Pronunciation Scoring</h3>
+  <p>Browser-based speech recognition does not expose phoneme data, making accurate pronunciation scoring impossible in the main request loop. To solve this, the system implements an asynchronous pipeline:</p>
+  <ol>
+    <li><strong>Audio Capture:</strong> During the interview, the client records short audio chunks using the <code>MediaRecorder</code> API and sends them to the server.</li>
+    <li><strong>Queueing:</strong> The <code>audio_analysis_queue.py</code> module pushes these audio chunks to a Redis queue named <code>interviewiq:pronunciation</code>. The main interview loop does not wait for this processing.</li>
+    <li><strong>Background Processing:</strong> The <code>pronunciation_worker.py</code> script runs as a separate process, consuming items from the Redis queue. It uses the <code>facebook/wav2vec2-lv-60-espeak-cv-ft</code> model to compare the transcript phonemes with the phonemes detected from the audio.</li>
+    <li><strong>Result Update:</strong> Once processed, the worker updates the <code>pronunciation_score</code> and <code>analysis_status</code> fields in the <code>voice_analyses</code> table. Temporary audio files are deleted after processing or after a retention period defined by <code>AUDIO_RETENTION_SECONDS</code>.</li>
+  </ol>
+</section>
+
+<!-- 8. ASSISTANT -->
+<section class="page-break">
+  <h2><span class="num">8</span> Personalized Coaching Assistant</h2>
+  <p>The personalized coaching assistant is implemented in <code>assistant_service.py</code> and exposed via the <code>/assistant/messages</code> endpoints. It allows users to ask follow-up questions grounded in their specific data.</p>
+
+  <h3>8.1 Context Assembly</h3>
+  <p>When a user sends a message, the assistant does not rely solely on the LLM's general knowledge. Instead, it constructs a highly specific context window. The system retrieves the user's latest resume, job description, gap analysis, generated questions, and interview history. This data is formatted and injected into the system prompt.</p>
+
+  <h3>8.2 Prompt Engineering &amp; Grounding</h3>
+  <p>The prompt explicitly instructs the LLM to act as a career coach and to base its answers exclusively on the provided context. If the user asks a question that cannot be answered using their data, the model is instructed to state that it does not have the information, rather than hallucinating. This ensures the assistant remains a reliable tool for interview preparation.</p>
+
+  <h3>8.3 Message Persistence</h3>
+  <p>All conversation messages are stored in the <code>assistant_messages</code> table, linked to the user's ID. This allows the user to review past interactions. Furthermore, these messages are included in the account export functionality and are permanently deleted when the user invokes the account deletion endpoint, ensuring complete data sovereignty.</p>
+</section>
+
+<!-- 9. AUTH & SECURITY -->
+<section class="page-break">
+  <h2><span class="num">9</span> Authentication, Security &amp; Account Management</h2>
+  <p>Security is managed across <code>auth.py</code>, <code>services_auth.py</code>, <code>account_service.py</code>, and <code>email_service.py</code>. The system implements a robust, stateful authentication mechanism.</p>
+
+  <h3>9.1 Password Storage &amp; Session Management</h3>
+  <p>Passwords are hashed using Argon2id, a memory-hard function resistant to GPU-based cracking. Upon successful login, the system issues a JWT stored in an HttpOnly cookie. To prevent session hijacking, the system maintains a blacklist of revoked tokens in Redis. When a user logs out, the token's JTI (JWT ID) is added to Redis, and the middleware checks this blacklist on every subsequent request, ensuring immediate session termination.</p>
+
+  <h3>9.2 Email Verification &amp; Password Recovery</h3>
+  <p>The <code>email_service.py</code> module handles asynchronous email delivery via SMTP. It supports email verification flows and password recovery. The password reset flow uses time-limited, hashed tokens. Crucially, the API responses for password reset requests do not reveal whether an email address exists in the database, preventing user enumeration attacks.</p>
+
+  <h3>9.3 Data Sovereignty</h3>
+  <p>The <code>account_service.py</code> module provides two critical endpoints: <code>/account/export</code> and <code>/account</code> (DELETE). The export endpoint aggregates all user data (resumes, analyses, questions, interview history, and assistant messages) into a structured JSON format, excluding sensitive credentials. The deletion endpoint performs a cascading delete of all associated records, ensuring complete and irreversible data removal.</p>
+</section>
+
+<!-- 10. DATABASE -->
+<section class="page-break">
+  <h2><span class="num">10</span> Database Schema &amp; Data Modeling</h2>
+  <p>The database schema is defined in <code>models.py</code> and <code>db_structure.sql</code>. It consists of eleven tables, all utilizing UUID primary keys to prevent enumeration attacks and facilitate distributed scaling.</p>
+  
+  <h3>10.1 Core Tables &amp; Constraints</h3>
+  <table>
+    <thead><tr><th style="width:20%">Table</th><th>Purpose &amp; Key Constraints</th></tr></thead>
+    <tbody>
+      <tr><td><code>users</code></td><td>Stores credentials and verification tokens. Enforces unique email and NOT NULL on password hash.</td></tr>
+      <tr><td><code>resumes</code> / <code>job_descriptions</code></td><td>Stores versioned documents. Enforces unique <code>(user_id, version_no)</code> to prevent duplication.</td></tr>
+      <tr><td><code>resume_analysis</code></td><td>Stores LLM output. Enforces unique <code>(user_id, analysis_hash)</code> to ensure identical inputs yield a single record.</td></tr>
+      <tr><td><code>questions</code></td><td>Stores generated questions. Enforces unique <code>(user_id, question_hash)</code> and includes CHECK constraints for categories.</td></tr>
+      <tr><td><code>interview_sessions</code></td><td>Tracks interview state. Includes a partial unique index <code>WHERE status IN ('preparing','active')</code> to enforce one active interview per user.</td></tr>
+      <tr><td><code>interview_turns</code></td><td>Records individual Q&A pairs within a session. Enforces unique <code>(session_id, turn_no)</code>.</td></tr>
+      <tr><td><code>voice_analyses</code></td><td>Stores calculated speech metrics. Enforces a 1:1 relationship with <code>interview_turns</code>.</td></tr>
+      <tr><td><code>assistant_messages</code></td><td>Stores chat history. Enforces role CHECK constraint <code>(user, assistant)</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>10.2 Indexing Strategy</h3>
+  <p>To optimize query performance, specific indexes were implemented:</p>
+  <ul>
+    <li><strong>Composite Indexes:</strong> Used on <code>(user_id, created_at)</code> for chronological retrieval of sessions and messages.</li>
+    <li><strong>Partial Indexes:</strong> The partial unique index on <code>interview_sessions</code> ensures that a user cannot have multiple active interviews simultaneously, enforced at the database level rather than the application level.</li>
+    <li><strong>JSONB Support:</strong> Columns storing AI outputs (e.g., <code>others</code> in <code>resume_analysis</code>, <code>ideal_answer_points</code> in <code>questions</code>) use the JSONB data type, allowing for flexible schema evolution without requiring immediate database migrations.</li>
+  </ul>
+</section>
+
+<!-- 11. API -->
+<section class="page-break">
+  <h2><span class="num">11</span> API Design &amp; State Management</h2>
+  <p>The API is defined in <code>main.py</code> and documented via Swagger UI at the <code>/docs</code> endpoint. Request and response shapes are strictly typed using Pydantic models in <code>schemas.py</code>.</p>
+  
+  <h3>11.1 RESTful Endpoints</h3>
+  <table>
+    <thead><tr><th style="width:8%">Method</th><th style="width:32%">Path</th><th style="width:8%">Auth</th><th>Functionality</th></tr></thead>
+    <tbody>
+      <tr><td>GET</td><td>/health/live, /health/ready</td><td>—</td><td>Process liveness and dependency checks (PostgreSQL, Redis, Gemini).</td></tr>
+      <tr><td>POST</td><td>/register, /login, /logout</td><td>—/—/✓</td><td>Account creation, authentication, and session termination.</td></tr>
+      <tr><td>POST</td><td>/analyze</td><td>✓</td><td>Triggers PDF extraction, versioning, and AI gap analysis.</td></tr>
+      <tr><td>POST</td><td>/questions/generate</td><td>✓</td><td>Generates a batch of tailored questions with deduplication.</td></tr>
+      <tr><td>POST</td><td>/interviews</td><td>✓</td><td>Initializes an interview session, snapshotting current document versions.</td></tr>
+      <tr><td>POST</td><td>/assistant/messages</td><td>✓</td><td>Processes chat queries grounded in user data.</td></tr>
+      <tr><td>GET/DELETE</td><td>/account/export, /account</td><td>✓</td><td>Data retrieval and irreversible account deletion.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>11.2 Middleware &amp; Error Handling</h3>
+  <p>The <code>main.py</code> file implements critical middleware. The <code>add_request_id</code> middleware injects a unique <code>X-Request-ID</code> header into every response, facilitating log correlation. The <code>reject_oversized_requests</code> middleware checks the <code>Content-Length</code> header before reading the body, returning an HTTP 413 error for uploads exceeding 5 MB. Error handling is centralized, returning specific HTTP status codes: <code>400</code> for missing inputs, <code>401</code> for auth failures, <code>422</code> for validation errors, and <code>503</code> for AI service unavailability.</p>
+</section>
+
+<!-- 12. TESTING -->
+<section>
+  <h2><span class="num">12</span> Testing, CI/CD &amp; Quality Assurance</h2>
+  <p>A comprehensive testing strategy was implemented to ensure system reliability without incurring AI API costs during development. The test suite is located in <code>test_fixes.py</code> and <code>test_questions.py</code>, with fixtures defined in <code>conftest.py</code>.</p>
+  <ul>
+    <li><strong>Mock AI Client:</strong> The tests utilize a fake Gemini client. This allows the testing of prompt construction, output parsing, and database interactions without making actual API calls, ensuring the test suite runs quickly and at zero cost.</li>
+    <li><strong>Database Isolation:</strong> Tests run against a dedicated database (suffix <code>_test</code>) and truncate only the tables relevant to the specific test case, ensuring test isolation and repeatability.</li>
+    <li><strong>Continuous Integration:</strong> GitHub Actions workflows (defined in <code>.github/workflows</code>) execute the test suite against live PostgreSQL and Redis services on every push and pull request. This ensures that database schema changes or dependency updates do not break existing functionality.</li>
+    <li><strong>Logging &amp; Observability:</strong> Every request generates a structured log entry containing a unique Request ID, HTTP method, path, status code, and duration. Request bodies are never logged. This facilitates debugging in production without compromising user privacy.</li>
+  </ul>
+</section>
+
+<!-- 13. DEPLOYMENT -->
+<section class="page-break">
+  <h2><span class="num">13</span> Deployment &amp; Operational Configuration</h2>
+  <p>Operational configuration is centralized in <code>config.py</code>, which loads environment variables using <code>python-dotenv</code>. Deployment is facilitated by the <code>run_interview.sh</code> script.</p>
+  
+  <h3>13.1 Environment Variables</h3>
+  <table>
+    <thead><tr><th style="width:30%">Variable</th><th style="width:12%">Required</th><th>Description / Default</th></tr></thead>
+    <tbody>
+      <tr><td>DATABASE_URL</td><td>Yes</td><td>PostgreSQL connection string (e.g., <code>postgresql+psycopg://user:pass@host/db</code>).</td></tr>
+      <tr><td>SECRET_KEY</td><td>Yes</td><td>Secret key for JWT signing. Generate via <code>openssl rand -hex 32</code>.</td></tr>
+      <tr><td>GOOGLE_API_KEY</td><td>Yes</td><td>API key for Google Gemini services.</td></tr>
+      <tr><td>REDIS_URL</td><td>No</td><td>Redis connection string. Default: <code>redis://localhost:6379/0</code>.</td></tr>
+      <tr><td>SPEECH_PROVIDER</td><td>No</td><td>Set to <code>browser</code> (default) or <code>azure</code>.</td></tr>
+      <tr><td>PRONUNCIATION_PROVIDER</td><td>No</td><td>Set to <code>local_wav2vec2</code> for background scoring.</td></tr>
+      <tr><td>COOKIE_SECURE</td><td>No</td><td>Set to <code>true</code> in production HTTPS environments. Default: <code>false</code>.</td></tr>
+      <tr><td>AUTO_CREATE_TABLES</td><td>No</td><td>Set to <code>true</code> for local development only. Default: <code>false</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>13.2 Execution</h3>
+  <p>The <code>run_interview.sh</code> script orchestrates the startup of the API server and the pronunciation worker simultaneously. It ensures that Redis is running before initiating the services. For production deployments, it is recommended to use a process manager like systemd or a container orchestration platform to manage the API and worker processes independently.</p>
+</section>
+
+<!-- 14. CONCLUSION -->
+<section class="page-break">
+  <h2><span class="num">14</span> Conclusion</h2>
+  <p class="lead">InterviewIQ provides a comprehensive, self-hostable solution for automated interview preparation. By combining document analysis, adaptive question generation, real-time voice processing, and personalized coaching, the system addresses the primary limitations of existing text-based preparation tools.</p>
+  <p>The development process focused on engineering rigor, implementing idempotent operations to control costs, database-level concurrency controls to ensure data integrity, and strict trust boundaries to secure AI interactions. The resulting application provides candidates with a measurable, adaptive, and realistic interview practice environment.</p>
+  <p>Through the 30-Day Innovation Challenge, the ML Quad team successfully delivered a production-shaped backend that demonstrates the practical application of large language models in a structured, stateful, and secure environment. The project serves as a foundation for future enhancements in automated recruitment and personalized education technologies.</p>
+  
+  <div class="foot-end">
+    <strong>Team ML Quad</strong> — Mo Sahil · Mohd Amaan Siddiqui · Md Anas · Rushan Alam ·
+    <strong>Project:</strong> InterviewIQ (AI Interview Chat Assistant) · <strong>Event:</strong> SparkX 3.0 — 30-Day Innovation Challenge ·
+    <strong>Repository:</strong> github.com/Mo-Sahil-AI/interviewiq
+  </div>
+</section>
+
+</body>
+</html>

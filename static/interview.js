@@ -28,6 +28,7 @@ let recognitionConfidence = null;
 let recorder = null;
 let pendingTranscript = null;
 let recordingContentType = "audio/webm";
+let recognitionLang = "en-US";
 
 async function startMicrophoneMonitor() {
   if (!navigator.mediaDevices?.getUserMedia) return;
@@ -60,6 +61,19 @@ function monitorMicrophone() {
     }, 0) / samples.length
   );
   const now = performance.now();
+
+  if (listeningText && !listeningText.hidden) {
+    const bars = document.querySelectorAll(".audio-wave .bar");
+    if (bars.length > 0) {
+      const intensity = Math.min(1, Math.max(0.12, rms * 16));
+      bars.forEach((bar, index) => {
+        const waveFactor = 0.45 + 0.55 * Math.sin((now / 110) + index * 0.75);
+        const scaleY = Math.max(0.2, Math.min(1.85, intensity * waveFactor * 2.6));
+        bar.style.transform = `scaleY(${scaleY.toFixed(2)})`;
+      });
+    }
+  }
+
   if (rms < 0.018) {
     if (silenceStartedAt === null && sawSpeech) silenceStartedAt = now;
   } else {
@@ -79,6 +93,9 @@ function stopMicrophoneMonitor() {
     window.cancelAnimationFrame(audioMonitorHandle);
     audioMonitorHandle = null;
   }
+  document.querySelectorAll(".audio-wave .bar").forEach((bar) => {
+    bar.style.transform = "scaleY(0.25)";
+  });
   microphoneStream?.getTracks().forEach((track) => track.stop());
   microphoneStream = null;
   if (audioContext) {
@@ -90,7 +107,12 @@ function stopMicrophoneMonitor() {
 
 function setStatus(message, isError = false) {
   statusText.textContent = message;
-  statusText.style.color = isError ? "#d92d20" : "#356ae6";
+  statusText.style.color = isError ? "var(--red)" : "var(--mint-light)";
+  const indicator = document.querySelector(".status-indicator");
+  if (indicator) {
+    indicator.style.background = isError ? "var(--red)" : "var(--mint)";
+    indicator.style.boxShadow = isError ? "0 0 8px var(--red)" : "0 0 8px var(--mint)";
+  }
 }
 
 function renderTimer() {
@@ -118,8 +140,8 @@ function startTimer(seconds) {
 }
 
 function addTranscript(text) {
-  if (transcriptList.children.length === 1 &&
-      transcriptList.firstElementChild.classList.contains("muted")) {
+  const emptyItem = transcriptList.querySelector(".transcript-empty, .muted");
+  if (emptyItem) {
     transcriptList.replaceChildren();
   }
   const item = document.createElement("li");
@@ -161,7 +183,7 @@ function sendPendingTranscript() {
     duration_ms: answerStartedAt === null
       ? 0
       : Math.round(performance.now() - answerStartedAt),
-    language: recognition?.lang || "en-US",
+    language: recognitionLang,
     pause_count: pauseCount,
     long_pause_count: longPauseCount,
     recognition_confidence: recognitionConfidence,
@@ -179,6 +201,7 @@ function listenForAnswer() {
   resetAudioMetrics();
   recognition = new SpeechRecognition();
   recognition.lang = "en-US";
+  recognitionLang = recognition.lang;
   recognition.interimResults = false;
   recognition.continuous = false;
   recognition.onstart = () => {
@@ -258,14 +281,24 @@ async function createAndStartInterview() {
     body: JSON.stringify(payload),
   });
   if (!createdResponse.ok) {
-    throw new Error((await createdResponse.json()).detail || "Could not create interview");
+    let detail = "Could not create interview";
+    try {
+      const errorData = await createdResponse.json();
+      detail = errorData?.detail || detail;
+    } catch (_) { /* non-JSON response body */ }
+    throw new Error(detail);
   }
   const session = await createdResponse.json();
   const startResponse = await fetch(`/interviews/${session.id}/start`, {
     method: "POST",
   });
   if (!startResponse.ok) {
-    throw new Error((await startResponse.json()).detail || "Could not start interview");
+    let detail = "Could not start interview";
+    try {
+      const errorData = await startResponse.json();
+      detail = errorData?.detail || detail;
+    } catch (_) { /* non-JSON response body */ }
+    throw new Error(detail);
   }
   return session.id;
 }

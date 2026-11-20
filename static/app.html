@@ -3,8 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#07151a">
-  <title>InterviewIQ</title>
+  <meta name="theme-color" content="#060b0f">
+  <title>InterviewIQ · AI-Powered Preparation & Voice Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
@@ -58,17 +61,38 @@
         <p class="brand-mark">Interview<span>IQ</span></p>
         <p class="sidebar-label">Workspace</p>
         <nav class="nav-list" aria-label="Workspace sections">
-          <button class="nav-item active" type="button" data-section="overview" aria-current="page">Overview</button>
-          <button class="nav-item" type="button" data-section="documents">Resume &amp; JD</button>
-          <button class="nav-item" type="button" data-section="analysis">Analysis</button>
-          <button class="nav-item" type="button" data-section="questions">Questions</button>
-          <button class="nav-item" type="button" data-section="interview">Mock interview</button>
-          <button class="nav-item" type="button" data-section="assistant">Coach assistant</button>
+          <button class="nav-item active" type="button" data-section="overview" aria-current="page">
+            <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="16" width="7" height="5" rx="1"></rect></svg>
+            <span>Overview</span>
+          </button>
+          <button class="nav-item" type="button" data-section="documents">
+            <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            <span>Resume &amp; JD</span>
+          </button>
+          <button class="nav-item" type="button" data-section="analysis">
+            <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20V10"></path><path d="M18 20V4"></path><path d="M6 20v-4"></path></svg>
+            <span>Analysis</span>
+          </button>
+          <button class="nav-item" type="button" data-section="questions">
+            <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><circle cx="12" cy="11" r="1"></circle></svg>
+            <span>Questions</span>
+          </button>
+          <button class="nav-item" type="button" data-section="interview">
+            <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+            <span>Mock interview</span>
+          </button>
+          <button class="nav-item" type="button" data-section="assistant">
+            <svg class="nav-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z"></path></svg>
+            <span>Coach assistant</span>
+          </button>
         </nav>
       </div>
       <div class="sidebar-bottom">
         <p id="user-email" class="user-email"></p>
-        <button id="logout" class="logout-button" type="button">Log out</button>
+        <button id="logout" class="logout-button" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <span>Log out</span>
+        </button>
       </div>
     </aside>
 
@@ -117,13 +141,13 @@
       </section>
 
       <section id="section-documents" class="page-section" hidden>
-        <div class="section-heading"><div><p class="eyebrow">Foundation</p><h2>Resume &amp; job description</h2><p>Keep the context for every analysis, question, and interview in one place.</p></div></div>
-        <form id="analyze-form" class="panel upload-panel">
+        <div class="section-heading"><div><p class="eyebrow">Foundation</p><h2>Resume &amp; job description</h2><p id="documents-subtitle">Keep the context for every analysis, question, and interview in one place.</p></div></div>
+        <form id="analyze-form" class="panel upload-panel" novalidate>
           <div class="upload-grid">
-            <label class="file-drop" for="resume-file"><span class="drop-icon" aria-hidden="true">↑</span><strong>Upload resume PDF</strong><small id="file-name">PDF up to 5&nbsp;MB</small><input id="resume-file" name="resume" type="file" accept=".pdf,application/pdf" required></label>
-            <label class="textarea-field" for="job-description"><span>Target job description</span><textarea id="job-description" name="job_description" rows="10" placeholder="Paste the role description here…" autocomplete="off" required></textarea></label>
+            <label class="file-drop" for="resume-file"><span class="drop-icon" aria-hidden="true">↑</span><strong id="resume-drop-title">Upload resume PDF</strong><small id="file-name">PDF up to 5&nbsp;MB</small><input id="resume-file" name="resume" type="file" accept=".pdf,application/pdf"></label>
+            <label class="textarea-field" for="job-description"><span id="jd-field-label">Target job description</span><textarea id="job-description" name="job_description" rows="10" placeholder="Paste the role description here…" autocomplete="off"></textarea></label>
           </div>
-          <div class="form-footer"><p id="upload-status" class="form-message"></p><button class="dark-button" type="submit">Upload &amp; analyze</button></div>
+          <div class="form-footer"><p id="upload-status" class="form-message"></p><button id="analyze-submit" class="dark-button" type="submit">Upload &amp; analyze</button></div>
         </form>
         <div class="saved-context">
           <article class="panel"><p class="eyebrow">Saved resume</p><h3 id="saved-resume">None yet</h3><p id="saved-resume-detail">Upload a PDF to create your first resume version.</p></article>

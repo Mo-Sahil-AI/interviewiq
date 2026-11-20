@@ -64,7 +64,11 @@ def enqueue(
     try:
         client.rpush(PRONUNCIATION_QUEUE_NAME, json.dumps(payload))
     except redis.RedisError:
-        os.remove(path)
+        try:
+            if os.path.exists(path):
+                os.remove(path)
+        except OSError:
+            pass
         analysis.analysis_status = "failed"
         analysis.analysis_error = "Pronunciation queue is unavailable"
         db.commit()

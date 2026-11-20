@@ -105,8 +105,8 @@ function renderOverview() {
   $("#next-step-title").textContent = !resume || !jd ? "Upload your resume and target job description." : !analysis ? "Run your first role-fit analysis." : "Generate questions and practice aloud.";
   $("#next-step-copy").textContent = !resume || !jd ? "Start with your documents and InterviewIQ will build the rest of your preparation workspace." : !analysis ? "Your documents are ready. Analyze them to see strengths, gaps, and focused next steps." : "Your context is ready. Move from insight to deliberate practice.";
   const action = $("#next-step-action");
-  action.textContent = (!resume || !jd) ? "Set up documents" : "Go to questions";
-  action.dataset.go = (!resume || !jd) ? "documents" : "questions";
+  action.textContent = (!resume || !jd) ? "Set up documents" : !analysis ? "Run analysis" : "Go to questions";
+  action.dataset.go = (!resume || !jd) ? "documents" : !analysis ? "documents" : "questions";
   if (analysis) {
     $("#analysis-empty").hidden = true;
     $("#analysis-content").hidden = false;
@@ -117,6 +117,57 @@ function renderOverview() {
   } else {
     $("#analysis-empty").hidden = false;
     $("#analysis-content").hidden = true;
+  }
+  updateDocumentsFormState();
+}
+
+function updateDocumentsFormState() {
+  if (!overview) return;
+  const resume = overview.resume;
+  const jd = overview.job_description;
+  const isOldUser = Boolean(resume && jd);
+
+  const resumeTitle = $("#resume-drop-title");
+  const fileName = $("#file-name");
+  const jdLabel = $("#jd-field-label");
+  const jdInput = $("#job-description");
+  const submitBtn = $("#analyze-submit");
+  const subtitle = $("#documents-subtitle");
+
+  if (isOldUser) {
+    if (resumeTitle) resumeTitle.textContent = "Upload new resume PDF";
+    if (fileName && !$("#resume-file").files[0]) {
+      fileName.textContent = `Using saved: ${resume.file_name} (v${resume.version_no}) · Click to replace`;
+    }
+    if (jdLabel) {
+      jdLabel.textContent = `Target job description (Optional — using saved v${jd.version_no})`;
+    }
+    if (jdInput && !jdInput.value) {
+      jdInput.placeholder = `Leave empty to keep using saved role description (v${jd.version_no}), or paste a new one to update…`;
+    }
+    if (submitBtn) {
+      submitBtn.textContent = "Update & analyze";
+    }
+    if (subtitle) {
+      subtitle.textContent = "Both documents are saved. You can update your resume, your job description, or both. The latest saved version will be used for whichever you leave blank.";
+    }
+  } else {
+    if (resumeTitle) resumeTitle.textContent = resume ? "Update resume PDF" : "Upload resume PDF";
+    if (fileName && !$("#resume-file").files[0]) {
+      fileName.textContent = resume ? `Using saved: ${resume.file_name} (v${resume.version_no})` : "PDF up to 5 MB";
+    }
+    if (jdLabel) {
+      jdLabel.textContent = jd ? `Target job description (Saved v${jd.version_no})` : "Target job description";
+    }
+    if (jdInput && !jdInput.value) {
+      jdInput.placeholder = jd ? `Using saved v${jd.version_no}. Leave empty or paste new one…` : "Paste the role description here…";
+    }
+    if (submitBtn) {
+      submitBtn.textContent = "Upload & analyze";
+    }
+    if (subtitle) {
+      subtitle.textContent = "Keep the context for every analysis, question, and interview in one place.";
+    }
   }
 }
 
@@ -185,19 +236,86 @@ $("#logout").addEventListener("click", async () => {
 });
 
 $("#resume-file").addEventListener("change", (event) => {
-  $("#file-name").textContent = event.target.files[0]?.name || "PDF up to 5 MB";
+  const file = event.target.files[0];
+  if (file) {
+    $("#file-name").textContent = `${file.name} (${Math.round(file.size / 1024)} KB) · Selected`;
+  } else if (overview?.resume) {
+    $("#file-name").textContent = `Using saved: ${overview.resume.file_name} (v${overview.resume.version_no}) · Click to replace`;
+  } else {
+    $("#file-name").textContent = "PDF up to 5 MB";
+  }
 });
+
+const fileDrop = $(".file-drop");
+if (fileDrop) {
+  ["dragenter", "dragover"].forEach((eventName) => {
+    fileDrop.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      fileDrop.classList.add("drag-over");
+    });
+  });
+
+  ["dragleave", "dragend", "drop"].forEach((eventName) => {
+    fileDrop.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      fileDrop.classList.remove("drag-over");
+    });
+  });
+
+  fileDrop.addEventListener("drop", (e) => {
+    const droppedFiles = e.dataTransfer?.files;
+    if (droppedFiles && droppedFiles.length > 0) {
+      const fileInput = $("#resume-file");
+      fileInput.files = droppedFiles;
+      fileInput.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  });
+}
+
 $("#analyze-form").addEventListener("submit", async (event) => {
   event.preventDefault();
+  const resumeFile = $("#resume-file").files[0];
+  const jdValue = $("#job-description").value.trim();
+  const hasSavedResume = Boolean(overview?.resume);
+  const hasSavedJd = Boolean(overview?.job_description);
+
+  if (!hasSavedResume && !resumeFile) {
+    showMessage($("#upload-status"), "Please upload a resume PDF to get started.", true);
+    return;
+  }
+  if (!hasSavedJd && !jdValue) {
+    showMessage($("#upload-status"), "Please enter a target job description to get started.", true);
+    return;
+  }
+  if (hasSavedResume && hasSavedJd && !resumeFile && !jdValue) {
+    showMessage($("#upload-status"), "Please choose a new resume PDF, enter a new job description, or both to update.", true);
+    return;
+  }
+
   const form = new FormData();
-  form.append("resume", $("#resume-file").files[0]);
-  form.append("job_description", $("#job-description").value);
-  showMessage($("#upload-status"), "Uploading and analyzing…");
+  if (resumeFile) {
+    form.append("resume", resumeFile);
+  }
+  if (jdValue) {
+    form.append("job_description", jdValue);
+  }
+
+  const statusMsg = (resumeFile && jdValue)
+    ? "Uploading new resume and job description, then analyzing…"
+    : resumeFile
+      ? "Uploading new resume and analyzing with your saved job description…"
+      : "Updating job description and analyzing with your saved resume…";
+
+  showMessage($("#upload-status"), statusMsg);
   try {
     await request("/analyze", { method: "POST", body: form });
     overview = await request("/account/overview");
     renderOverview();
-    showMessage($("#upload-status"), "Analysis saved. Your workspace is updated.");
+    $("#resume-file").value = "";
+    $("#job-description").value = "";
+    showMessage($("#upload-status"), "Analysis updated successfully.");
     showSection("analysis");
   } catch (error) {
     showMessage($("#upload-status"), error.message, true);
@@ -233,7 +351,7 @@ function renderQuestionItems(items, total, title) {
     const item = document.createElement("div");
     item.className = "question-item";
     const meta = document.createElement("small");
-    meta.textContent = `${question.category.replace("_", " ")} · ${question.difficulty} · round ${question.batch_no}`;
+    meta.textContent = `${question.category.replaceAll("_", " ")} · ${question.difficulty} · round ${question.batch_no}`;
     const text = document.createElement("p");
     text.textContent = question.question_text;
     item.append(meta, text);
@@ -345,14 +463,19 @@ async function loadInterviews() {
       item.className = "history-item";
       item.type = "button";
       const title = document.createElement("strong");
-      title.textContent = `${interview.interview_type.replace("_", " ")} interview`;
+      title.textContent = `${interview.interview_type.replaceAll("_", " ")} interview`;
       const meta = document.createElement("small");
       meta.textContent = `${interview.status} · ${interview.overall_score === null ? "Score pending" : `${interview.overall_score}/100`}`;
       item.append(title, meta);
       item.addEventListener("click", () => loadInterviewReview(interview.id));
       list.appendChild(item);
     });
-    if (!data.items.length) list.innerHTML = '<p class="muted">No interviews yet.</p>';
+    if (!data.items.length) {
+      const empty = document.createElement("p");
+      empty.className = "muted";
+      empty.textContent = "No interviews yet.";
+      list.appendChild(empty);
+    }
   } catch (error) { showMessage(globalMessage, error.message, true); }
 }
 $("#refresh-interviews").addEventListener("click", loadInterviews);
@@ -384,7 +507,7 @@ async function loadInterviewReview(sessionId) {
     const data = await request(`/interviews/${sessionId}/review`);
     const summary = data.summary || {};
     $("#interview-review").hidden = false;
-    $("#review-title").textContent = `${data.session.interview_type.replace("_", " ")} interview`;
+    $("#review-title").textContent = `${data.session.interview_type.replaceAll("_", " ")} interview`;
     $("#review-summary").textContent = summary.summary_text || "This interview does not have a written summary yet.";
     const scoreGrid = $("#review-score-grid");
     scoreGrid.replaceChildren();
@@ -443,7 +566,10 @@ function renderAssistantMessages(messages) {
   const list = $("#assistant-messages");
   list.replaceChildren();
   if (!messages.length) {
-    list.innerHTML = '<p class="muted">Ask me anything about your interview preparation.</p>';
+    const empty = document.createElement("p");
+    empty.className = "muted";
+    empty.textContent = "Ask me anything about your interview preparation.";
+    list.appendChild(empty);
     return;
   }
   messages.forEach((message) => {
